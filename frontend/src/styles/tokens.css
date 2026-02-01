@@ -1,0 +1,24 @@
+:root {
+  --color-parchment-light: #f4eed7;
+  --color-parchment: #e8dcc0;
+  --color-ink: #2d2416;
+  --color-border: #3d3020;
+  --color-wood-dark: #3d2817;
+  
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Crimson Text', serif;
+  --font-size-xl: 2.5rem;
+  --font-size-lg: 1.5rem;
+  --font-size-md: 1.125rem;
+  
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  
+  --border-width: 2px;
+  --border-radius-card: 12px;
+  --border-radius-md: 8px;
+  
+  --shadow-elevated: 0 8px 24px rgba(45, 36, 22, 0.35);
+}

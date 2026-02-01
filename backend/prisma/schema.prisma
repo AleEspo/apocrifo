@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PLAYER
+  ADMIN
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum GameState {
+  LOBBY
+  SHOW_WORD
+  WRITE_DEF
+  SUBMIT_LOCK
+  REVEAL_CHOICES
+  VOTE
+  RESULTS
+  NEXT_ROUND
+  END_GAME
+}
+
+enum RoomType {
+  PRIVATE
+  MATCHMAKING
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  nickname      String   @unique
+  avatar        String?
+  role          UserRole @default(PLAYER)
+  
+  authProviders UserAuthProvider[]
+  
+  createdRooms  Room[]   @relation("HostedRooms")
+  playerSessions PlayerSession[]
+  reports       Report[] @relation("ReportedBy")
+  submissions   Submission[]
+  votes         Vote[]
+  
+  isBanned      Boolean  @default(false)
+  banReason     String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([email])
+  @@index([nickname])
+}
+
+model UserAuthProvider {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       AuthProvider
+  providerUserId String
+  
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model Word {
+  id          String   @id @default(cuid())
+  lemma       String   @unique
+  partOfSpeech String
+  definition  String   @db.Text
+  tags        String[]
+  difficulty  Int      @default(3)
+  source      String?
+  isActive    Boolean  @default(true)
+  
+  timesUsed   Int      @default(0)
+  correctVotes Int     @default(0)
+  totalVotes  Int      @default(0)
+  
+  rounds      Round[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([difficulty, isActive])
+}
+
+model Room {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  type        RoomType
+  hostId      String
+  host        User     @relation("HostedRooms", fields: [hostId], references: [id])
+  
+  maxPlayers  Int      @default(8)
+  minPlayers  Int      @default(3)
+  numRounds   Int      @default(5)
+  writeTimer  Int      @default(90)
+  voteTimer   Int      @default(30)
+  
+  currentState GameState @default(LOBBY)
+  currentRound Int       @default(0)
+  
+  players     PlayerSession[]
+  rounds      Round[]
+  
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime @default(now())
+  
+  @@index([code])
+  @@index([type, currentState])
+}
+
+model PlayerSession {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  score       Int      @default(0)
+  isReady     Boolean  @default(false)
+  isConnected Boolean  @default(true)
+  socketId    String?
+  
+  submissions Submission[]
+  votes       Vote[]
+  
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+  
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model Round {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  wordId      String
+  word        Word     @relation(fields: [wordId], references: [id])
+  
+  roundNumber Int
+  
+  startedAt   DateTime @default(now())
+  writeEndAt  DateTime?
+  voteEndAt   DateTime?
+  
+  submissions Submission[]
+  votes       Vote[]
+  
+  @@unique([roomId, roundNumber])
+  @@index([roomId])
+}
+
+model Submission {
+  id          String   @id @default(cuid())
+  roundId     String
+  round       Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  playerId    String
+  player      PlayerSession @relation(fields: [playerId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  definition  String   @db.Text
+  isReal      Boolean  @default(false)
+  
+  isFlagged   Boolean  @default(false)
+  flagReason  String?
+  
+  votes       Vote[]
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([roundId, playerId])
+  @@index([roundId])
+}
+
+model Vote {
+  id            String   @id @default(cuid())
+  roundId       String
+  round         Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  playerId      String
+  player        PlayerSession @relation(fields: [playerId], references: [id])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  submissionId  String
+  submission    Submission @relation(fields: [submissionId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([roundId, playerId])
+  @@index([roundId])
+  @@index([submissionId])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  reporterId  String
+  reporter    User     @relation("ReportedBy", fields: [reporterId], references: [id])
+  
+  targetType  String
+  targetId    String
+  
+  reason      String
+  details     String?  @db.Text
+  
+  resolved    Boolean  @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([targetType, targetId])
+  @@index([resolved])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  roomId    String?
+  action    String
+  details   Json?
+  ipAddress String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+}
