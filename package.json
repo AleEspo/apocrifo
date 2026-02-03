@@ -1,0 +1,7 @@
+{
+  "name": "apocrifo-monorepo",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd backend && npm run start:prod"
+  }
+}
