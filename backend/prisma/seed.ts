@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -6,58 +6,64 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+  // Admin user
+  const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
-    where: { email: process.env.ADMIN_EMAIL || 'admin@apocrifo.game' },
+    where: { email: 'admin@apocrifo.game' },
     update: {},
     create: {
-      email: process.env.ADMIN_EMAIL || 'admin@apocrifo.game',
+      email: 'admin@apocrifo.game',
       passwordHash: adminPassword,
       nickname: 'Admin',
-      role: UserRole.ADMIN,
+      role: Role.ADMIN,
     },
   });
-  console.log('✅ Admin user created:', admin.email);
+  console.log('✅ Created admin:', admin.email);
 
-  const sampleWords = [
-    {
-      lemma: 'ABBALLARE',
-      partOfSpeech: 'verbo transitivo',
-      definition: 'Fare balle di fieno o di paglia, legandole e compattandole per il trasporto o la conservazione.',
-      tags: ['agricoltura', 'arcaico'],
-      difficulty: 3,
-    },
-    {
-      lemma: 'ACCOZZAGLIA',
-      partOfSpeech: 'sostantivo femminile',
-      definition: 'Insieme disordinato e confuso di persone o cose di poco valore; marmaglia.',
-      tags: ['dispregiativo'],
-      difficulty: 2,
-    },
+  // Sample words - MOLTE DI PIÙ!
+  const words = [
     {
       lemma: 'BISLACCO',
+      definition: 'Strambo, bizzarro, che ha comportamenti strani o insoliti',
       partOfSpeech: 'aggettivo',
-      definition: 'Strano, stravagante, eccentrico; che si comporta o ragiona in modo poco sensato.',
-      tags: ['carattere'],
-      difficulty: 1,
+    },
+    {
+      lemma: 'REDIMERE',
+      definition: 'Liberare da una condizione negativa, riscattare',
+      partOfSpeech: 'verbo',
+    },
+    {
+      lemma: 'SGANGHERATO',
+      definition: 'Sconnesso, mal funzionante, che non sta insieme bene',
+      partOfSpeech: 'aggettivo',
+    },
+    {
+      lemma: 'PERIPLO',
+      definition: 'Lungo viaggio intorno a qualcosa, specialmente per mare',
+      partOfSpeech: 'sostantivo',
+    },
+    {
+      lemma: 'LINDO',
+      definition: 'Estremamente pulito e ordinato',
+      partOfSpeech: 'aggettivo',
     },
   ];
 
-  for (const wordData of sampleWords) {
-    await prisma.word.upsert({
+  for (const wordData of words) {
+    const word = await prisma.word.upsert({
       where: { lemma: wordData.lemma },
       update: {},
       create: wordData,
     });
+    console.log('✅ Created word:', word.lemma);
   }
-  console.log(`✅ ${sampleWords.length} sample words created`);
 
-  console.log('✨ Seeding completed!');
+  console.log('🌱 Seeding complete!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding error:', e);
+    console.error('❌ Seeding failed:', e);
     process.exit(1);
   })
   .finally(async () => {
