@@ -8,11 +8,19 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(helmet());
+  // ABILITA I CORS QUI
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: 'https://apocrifo-frontend.onrender.com', // Il tuo URL frontend reale
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
+
+  app.setGlobalPrefix('api'); // Se il tuo URL usa /api/
+  
+  const port = process.env.PORT || 10000;
+  await app.listen(port, '0.0.0.0');
+}
+bootstrap();
 
   app.use(cookieParser());
 
