@@ -2,28 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import cookieParser from 'cookie-parser';
+import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ABILITA I CORS QUI
+  // 1. Sicurezza e Middleware
+  app.use(helmet());
+  app.use(cookieParser());
+
+  // 2. Configurazione CORS (Essenziale per Render)
   app.enableCors({
-    origin: 'https://apocrifo-frontend.onrender.com', // Il tuo URL frontend reale
+    origin: 'https://apocrifo-frontend.onrender.com',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
-  app.setGlobalPrefix('api'); // Se il tuo URL usa /api/
-  
-  const port = process.env.PORT || 10000;
-  await app.listen(port, '0.0.0.0');
-}
-bootstrap();
-
-  app.use(cookieParser());
-
+  // 3. Validazione e Prefissi
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -31,9 +27,9 @@ bootstrap();
       transform: true,
     }),
   );
-
   app.setGlobalPrefix('api');
 
+  // 4. Swagger (Documentazione)
   const config = new DocumentBuilder()
     .setTitle('Apocrifo API')
     .setDescription('Party game API documentation')
@@ -43,10 +39,11 @@ bootstrap();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
+  // 5. Avvio del server
+  const port = process.env.PORT || 10000;
+  await app.listen(port, '0.0.0.0');
+  
   console.log(`🎮 Apocrifo backend running on port ${port}`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();
