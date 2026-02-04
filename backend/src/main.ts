@@ -10,7 +10,9 @@ async function bootstrap() {
 
   // 1. Sicurezza e Middleware
   app.use(helmet());
-  app.use(cookieParser());
+  
+  const cookieHandler = (cookieParser as any).default || cookieParser;
+  app.use(cookieHandler());
 
   // 2. Configurazione CORS (Essenziale per Render)
   app.enableCors({
