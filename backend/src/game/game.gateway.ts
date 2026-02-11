@@ -165,3 +165,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     return { success: true };
   }
 }
+
+@SubscribeMessage('disconnect')
+async handleDisconnect(@ConnectedSocket() client: Socket) {
+  console.log('❌ Client disconnected:', client.id);
+  await this.gameEngine.handleDisconnect(client.id);
+}
