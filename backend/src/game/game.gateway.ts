@@ -171,3 +171,9 @@ async handleDisconnect(@ConnectedSocket() client: Socket) {
   console.log('❌ Client disconnected:', client.id);
   await this.gameEngine.handleDisconnect(client.id);
 }
+
+@SubscribeMessage('disconnect')
+async handleDisconnect(@ConnectedSocket() client: Socket) {
+  console.log('❌ Client disconnected:', client.id);
+  await this.gameEngine.handleDisconnect(client.id);
+}
